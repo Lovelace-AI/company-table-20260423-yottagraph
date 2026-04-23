@@ -1,150 +1,80 @@
 <template>
-    <div class="home-page">
-        <div class="home-content">
-            <div class="hero-section">
-                <img src="/LL-logo-full-wht.svg" alt="Lovelace" class="hero-logo" />
-                <h1 class="hero-title">{{ appName || 'Welcome to Aether' }}</h1>
-                <p class="hero-subtitle">Your AI-powered workspace is ready.</p>
+    <div class="d-flex flex-column fill-height">
+        <div class="flex-shrink-0 pa-6 page-header">
+            <div class="d-flex align-center mb-1">
+                <v-icon class="mr-2" color="primary">mdi-table-large</v-icon>
+                <h1 class="text-h5 font-weight-medium">Company table</h1>
+                <v-spacer />
+                <v-btn
+                    variant="text"
+                    size="small"
+                    :loading="loading"
+                    :disabled="!companies.length"
+                    prepend-icon="mdi-refresh"
+                    @click="refresh"
+                >
+                    Refresh
+                </v-btn>
             </div>
+            <div class="text-body-2 text-medium-emphasis mb-4">
+                Search for a company to add it to the table. Each cell shows the most recent value
+                from the Lovelace Knowledge Graph; the date in parentheses is when that value was
+                recorded.
+            </div>
+            <div class="search-wrap">
+                <CompanySearchInput :disabled="loading" @select="onSelect" />
+            </div>
+            <v-alert
+                v-if="error"
+                type="error"
+                variant="tonal"
+                class="mt-3"
+                closable
+                @click:close="error = null"
+            >
+                {{ error }}
+            </v-alert>
+        </div>
 
-            <div class="getting-started">
-                <h2 class="section-title">Getting Started</h2>
-                <div class="steps-grid">
-                    <div class="step-item">
-                        <span class="step-number">1</span>
-                        <div>
-                            <div class="step-title">Describe what you want</div>
-                            <div class="step-desc">
-                                Edit <code>DESIGN.md</code> with your project vision. The AI agent
-                                reads this first to understand what to build.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="step-item">
-                        <span class="step-number">2</span>
-                        <div>
-                            <div class="step-title">Build it</div>
-                            <div class="step-desc">
-                                Run <code>/build_my_app</code> in Cursor. The agent will design and
-                                implement your app based on the brief.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="step-item">
-                        <span class="step-number">3</span>
-                        <div>
-                            <div class="step-title">Deploy</div>
-                            <div class="step-desc">
-                                Push to main to auto-deploy on Vercel. Use
-                                <code>/deploy_agent</code> or <code>/deploy_mcp</code> for backend
-                                services.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="flex-grow-1 overflow-y-auto pa-6 pt-0">
+            <CompanyTable :rows="rows" :loading="loading" @remove="onRemove" />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-    const { appName } = useAppInfo();
+    const store = useCompanyStore();
+    const { rows, loading, error, load } = useCompanyTable();
+
+    const companies = computed(() => store.companies.value);
+
+    async function refresh() {
+        await load(companies.value.map((c) => ({ neid: c.neid, name: c.name })));
+    }
+
+    async function onSelect(entity: { neid: string; name: string }) {
+        await store.add(entity);
+        await refresh();
+    }
+
+    async function onRemove(neid: string) {
+        await store.remove(neid);
+        await refresh();
+    }
+
+    onMounted(async () => {
+        await store.ensureInitialized();
+        if (companies.value.length) {
+            await refresh();
+        }
+    });
 </script>
 
 <style scoped>
-    .home-page {
-        height: 100%;
-        overflow-y: auto;
-        display: flex;
-        justify-content: center;
-        padding: 48px 24px;
+    .page-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
-
-    .home-content {
-        max-width: 720px;
-        width: 100%;
-    }
-
-    .hero-section {
-        text-align: center;
-        margin-bottom: 48px;
-    }
-
-    .hero-logo {
-        height: 2rem;
-        width: auto;
-        margin-bottom: 24px;
-        opacity: 0.6;
-    }
-
-    .hero-title {
-        font-family: var(--font-headline);
-        font-weight: 400;
-        font-size: 2rem;
-        letter-spacing: 0.02em;
-        margin-bottom: 8px;
-    }
-
-    .hero-subtitle {
-        color: var(--lv-silver);
-        font-size: 1.1rem;
-    }
-
-    .getting-started {
-        margin-bottom: 48px;
-    }
-
-    .section-title {
-        font-family: var(--font-headline);
-        font-weight: 400;
-        font-size: 1.1rem;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: var(--lv-silver);
-        margin-bottom: 20px;
-    }
-
-    .steps-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .step-item {
-        display: flex;
-        gap: 16px;
-        align-items: flex-start;
-    }
-
-    .step-number {
-        flex-shrink: 0;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: var(--lv-surface);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--font-mono);
-        font-size: 0.8rem;
-        color: var(--lv-green);
-        margin-top: 2px;
-    }
-
-    .step-title {
-        font-weight: 500;
-        margin-bottom: 2px;
-    }
-
-    .step-desc {
-        color: var(--lv-silver);
-        font-size: 0.875rem;
-        line-height: 1.4;
-    }
-
-    .step-desc code {
-        font-size: 0.85em;
-        padding: 1px 5px;
+    .search-wrap {
+        max-width: 560px;
     }
 </style>
