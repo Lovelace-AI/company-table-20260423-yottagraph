@@ -17,7 +17,7 @@ export type SettingsDoc = Record<string, string>;
  *   pref.set(false);    // persists to KV
  *
  * When KV is not configured (local dev), works with defaults but won't persist.
- * See the `pref` cursor rule for namespacing and architecture details.
+ * See `pref.md` in the `aether` skill for namespacing and architecture details.
  */
 export class Pref<PrefType> {
     private _fieldName: string;

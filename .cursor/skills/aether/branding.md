@@ -1,8 +1,3 @@
----
-description: Apply when working on visual styling, colors, typography, theming, branding, or UI appearance.
-alwaysApply: false
----
-
 # Lovelace Branding
 
 The `lovelace-branding` skill (`skills/lovelace-branding/`) is the single source of truth for all brand specifics -- colors, typography, patterns, assets, and usage guidelines. Read the skill before making branding decisions. Start with `SKILL.md` for the file index.
@@ -15,13 +10,13 @@ Single dark theme. No light mode, no theme switching.
 
 These files are project-owned. Consult the branding skill for the values and patterns they should implement.
 
-| File | Role |
-|------|------|
-| `assets/brand-globals.css` | `:root` CSS variables and global typography/layout |
-| `assets/fonts.css` | `@font-face` declarations |
-| `assets/theme-styles.css` | Theme-aware CSS utility classes |
-| `composables/useLovelaceTheme.ts` | Theme color palette and Vuetify theme activation |
-| `composables/useThemeClasses.ts` | Theme-aware class combination utilities |
+| File                              | Role                                               |
+| --------------------------------- | -------------------------------------------------- |
+| `assets/brand-globals.css`        | `:root` CSS variables and global typography/layout |
+| `assets/fonts.css`                | `@font-face` declarations                          |
+| `assets/theme-styles.css`         | Theme-aware CSS utility classes                    |
+| `composables/useLovelaceTheme.ts` | Theme color palette and Vuetify theme activation   |
+| `composables/useThemeClasses.ts`  | Theme-aware class combination utilities            |
 
 ## Integration
 

@@ -1,8 +1,3 @@
----
-description: Manual local dev setup (npm run init --local, npm run dev). Apply when the environment check in AGENTS.md indicates local (non-Cursor-Cloud) and .env or node_modules are missing, or when the user asks how to run the app locally.
-alwaysApply: false
----
-
 ## Manual / Local Setup
 
 Node 20 is the baseline (pinned in `.nvmrc`). Newer versions generally work.

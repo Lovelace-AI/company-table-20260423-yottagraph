@@ -1,8 +1,3 @@
----
-description: Warns users not to modify package-managed instruction files in .cursor/
-alwaysApply: false
----
-
 # Aether Instructions Warning
 
 **You are editing a file managed by the `@yottagraph-app/aether-instructions` package.**
@@ -10,9 +5,8 @@ alwaysApply: false
 Package-managed files are tracked by `.cursor/.aether-instructions-manifest`.
 They will be **overwritten** when you run `/update_instructions`.
 
-This includes files under `.cursor/rules/`, `.cursor/commands/`,
-`.cursor/skills/`, **and the root `AGENTS.md`** (tracked as `root/AGENTS.md`
-in the manifest).
+This includes files under `.cursor/commands/`, `.cursor/skills/`, **and the
+root `AGENTS.md`** (tracked as `root/AGENTS.md` in the manifest).
 
 ## Do Not
 
@@ -20,7 +14,7 @@ in the manifest).
 
 ## To Customize
 
-If you need to modify a package-provided rule, command, or the root `AGENTS.md`:
+If you need to modify a package-provided command, skill topic, or the root `AGENTS.md`:
 
 1. **Copy** the file to a new name
 2. Make your changes to the copy
@@ -30,8 +24,8 @@ If you need to modify a package-provided rule, command, or the root `AGENTS.md`:
 Examples:
 
 ```bash
-# Customize a rule
-cp .cursor/rules/data.mdc .cursor/rules/data_custom.mdc
+# Customize a skill topic
+cp .cursor/skills/aether/data.md .cursor/skills/aether/data_custom.md
 
 # Customize AGENTS.md
 cp AGENTS.md AGENTS.local.md
@@ -44,7 +38,7 @@ cp AGENTS.md AGENTS.local.md
 ## How It Works
 
 - `.cursor/.aether-instructions-manifest` lists every file installed by the
-  package (one relative path per line, e.g. `rules/data.mdc`). Entries
+  package (one relative path per line, e.g. `skills/aether/data.md`). Entries
   prefixed with `root/` refer to files at the tenant repo root
   (currently only `root/AGENTS.md`).
 - `/update_instructions` deletes manifest entries, extracts fresh files from

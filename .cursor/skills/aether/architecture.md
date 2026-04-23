@@ -1,15 +1,10 @@
----
-description: "Project structure, navigation patterns, data architecture, server routes, agents, MCP servers. Read when adding pages, navigation, or server-side functionality."
-alwaysApply: false
----
-
 # Aether Architecture
 
 Aether is an app framework built on Nuxt 3 + Vue 3 + Vuetify 3 + TypeScript. It follows standard Nuxt conventions -- pages in `pages/`, components in `components/`, composables in `composables/`, server routes in `server/api/`.
 
 **Tech stack**: Nuxt 3 (SPA), Vue 3 Composition API (`<script setup>`), Vuetify 3, TypeScript (required), Auth0 (automatic).
 
-**Data source**: This app runs on the Lovelace platform (entities, news, filings, sentiment, relationships, events). See the `data` rule for how your app accesses that data. Do not call external APIs for data the platform provides.
+**Data source**: This app runs on the Lovelace platform (entities, news, filings, sentiment, relationships, events). See [data.md](data.md) in this skill for how your app accesses that data. Do not call external APIs for data the platform provides.
 
 ## Project Structure
 
@@ -26,13 +21,13 @@ mcp-servers/        # MCP servers (Python, deploy to Cloud Run)
 
 ## Data Architecture
 
-| Store | Purpose | When to use |
-|---|---|---|
-| Platform data (Query Server / Postgres per your architecture) | Lovelace knowledge graph or synced local data | See the `data` rule |
-| KV (Upstash Redis) | User preferences, lightweight state | Settings, watchlists, UI state that should persist |
-| Neon Postgres | App-specific relational data | Custom tables, complex queries (if provisioned — see the `storage` rule for how to check) |
+| Store                                                         | Purpose                                       | When to use                                                                                     |
+| ------------------------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Platform data (Query Server / Postgres per your architecture) | Lovelace knowledge graph or synced local data | See [data.md](data.md)                                                                          |
+| KV (Upstash Redis)                                            | User preferences, lightweight state           | Settings, watchlists, UI state that should persist                                              |
+| Neon Postgres                                                 | App-specific relational data                  | Custom tables, complex queries (if provisioned — see [storage.md](storage.md) for how to check) |
 
-See the `storage` rule to check which stores are available, then `pref` (client-side KV) and `server` (Neon usage) for detailed patterns.
+See [storage.md](storage.md) for backend selection and server-side usage (both KV and Neon Postgres), plus [pref.md](pref.md) for the client-side `Pref<T>` pattern.
 
 ## Adding Pages
 
@@ -115,8 +110,8 @@ Use server routes when you need to proxy external APIs (avoid CORS), access
 data server-side, or keep secrets off the client. Call them from client code
 with `$fetch('/api/my-data/fetch')`.
 
-See the `server` rule for file-routing conventions and Neon Postgres patterns.
-See `server-data` when calling the platform Query Server from server routes.
+See [server.md](server.md) for file-routing conventions and [storage.md](storage.md) for Neon Postgres patterns.
+See [server-data.md](server-data.md) when calling the platform Query Server from server routes.
 
 ## Beyond the UI: Agents, MCP Servers, and Server Routes
 
@@ -124,7 +119,7 @@ Aether apps are more than just a Nuxt SPA. The project contains three additional
 
 ### `agents/` -- ADK Agents (Python)
 
-Each subdirectory is a self-contained Python agent that deploys to Vertex AI Agent Engine. See the `agents` cursor rule for development patterns. Agents are deployed via the Broadchurch Portal UI or the `/deploy_agent` Cursor command, both of which trigger `deploy-agent.yml`. Use the `useAgentChat` composable to build a chat UI that talks to them.
+Each subdirectory is a self-contained Python agent that deploys to Vertex AI Agent Engine. See [agents.md](agents.md) for development patterns. Agents are deployed via the Broadchurch Portal UI or the `/deploy_agent` Cursor command, both of which trigger `deploy-agent.yml`. Use the `useAgentChat` composable to build a chat UI that talks to them.
 
 **Agent query path:** The app talks to Agent Engine directly — the portal is
 only in the auth path. The flow is:
@@ -142,7 +137,7 @@ project detail page for IAM health status.
 
 ### `mcp-servers/` -- MCP Servers (Python)
 
-Each subdirectory is a FastMCP server that deploys to Cloud Run. See the `mcp-servers` cursor rule. Deployed via Portal UI or `/deploy_mcp`, triggering `deploy-mcp.yml`. Agents can connect to MCP servers as tool providers.
+Each subdirectory is a FastMCP server that deploys to Cloud Run. See [mcp-servers.md](mcp-servers.md). Deployed via Portal UI or `/deploy_mcp`, triggering `deploy-mcp.yml`. Agents can connect to MCP servers as tool providers.
 
 ### `broadchurch.yaml`
 
@@ -157,11 +152,10 @@ Use these to build whatever UI fits the app:
   local Nitro streaming route (`/api/agent/:agentId/stream`) which calls
   Agent Engine directly with a tenant SA token. Handles streaming, session
   management, and response parsing. Shows clear error messages when IAM
-  permissions are missing. See the `agents` cursor rule for details.
+  permissions are missing. See [agents.md](agents.md) for details.
 - **`useTenantConfig()`** -- Fetch the tenant's runtime config (deployed
   agents, feature flags, MCP servers) from the Portal Gateway.
 - **`useElementalClient()`** -- When using the Elemental API from the client,
-  see the `data` rule.
+  see [data.md](data.md).
 - **`usePrefsStore()` / `Pref<T>`** -- KV-backed user preferences. See
-  the `pref` rule.
-
+  [pref.md](pref.md).

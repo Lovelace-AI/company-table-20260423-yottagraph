@@ -52,7 +52,7 @@ ls -d agents/*/
 > └── requirements.txt
 > ```
 >
-> See the `agents.mdc` rule for guidance on writing ADK agents.
+> See [`agents.md`](../skills/aether/agents.md) in the `aether` skill for guidance on writing ADK agents.
 
 Stop here.
 

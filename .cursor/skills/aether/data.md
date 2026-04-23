@@ -1,7 +1,3 @@
----
-description: "Data access via Elemental API: client usage, schema discovery, entity search, API gotchas, MCP servers. Read when building features that fetch or display data from the Query Server."
-alwaysApply: false
----
 # Data — Elemental API (platform data source)
 
 **This app is built on the Lovelace platform.** The Query Server is the
@@ -81,10 +77,10 @@ Test those with curl before implementing them in code.
 The gateway proxy authenticates on your behalf — no Auth0 tokens needed.
 Read `broadchurch.yaml` for the three values you need:
 
-| YAML path | Purpose |
-|---|---|
-| `gateway.url` | Portal Gateway base URL |
-| `tenant.org_id` | Your tenant ID (path segment) |
+| YAML path            | Purpose                              |
+| -------------------- | ------------------------------------ |
+| `gateway.url`        | Portal Gateway base URL              |
+| `tenant.org_id`      | Your tenant ID (path segment)        |
 | `gateway.qs_api_key` | API key (sent as `X-Api-Key` header) |
 
 Build the request URL as `{gateway.url}/api/qs/{tenant.org_id}/{endpoint}`
@@ -141,9 +137,9 @@ Elemental API patterns. **Use these instead of writing from scratch:**
 
 ```typescript
 const { flavors, properties, flavorByName, pidByName, refresh } = useElementalSchema();
-await refresh();                                // fetches once, then cached
-const articleFid = flavorByName('article');      // → string | null
-const namePid = pidByName('name');              // → string | null
+await refresh(); // fetches once, then cached
+const articleFid = flavorByName('article'); // → string | null
+const namePid = pidByName('name'); // → string | null
 ```
 
 Handles the dual response shapes (`res.schema.flavors` vs `res.flavors`)
@@ -152,14 +148,20 @@ and the `fid`/`findex` naming inconsistency automatically.
 ### `utils/elementalHelpers` — Gateway URL Helpers
 
 ```typescript
-import { buildGatewayUrl, getApiKey, padNeid, searchEntities, getEntityName } from '~/utils/elementalHelpers';
+import {
+    buildGatewayUrl,
+    getApiKey,
+    padNeid,
+    searchEntities,
+    getEntityName,
+} from '~/utils/elementalHelpers';
 
-const url = buildGatewayUrl('entities/search');   // full gateway URL
-const key = getApiKey();                          // from runtimeConfig
-const neid = padNeid('4926132345040704022');       // → "04926132345040704022"
+const url = buildGatewayUrl('entities/search'); // full gateway URL
+const key = getApiKey(); // from runtimeConfig
+const neid = padNeid('4926132345040704022'); // → "04926132345040704022"
 
 const results = await searchEntities('Microsoft'); // batch name search
-const name = await getEntityName(neid);            // display name lookup
+const name = await getEntityName(neid); // display name lookup
 ```
 
 ## Client Usage
@@ -174,7 +176,10 @@ const client = useElementalClient();
 
 const schema = await client.getSchema();
 const entities = await client.findEntities({
-    expression: JSON.stringify({ type: 'comparison', comparison: { operator: 'string_like', pid: 8, value: 'Apple' } }),
+    expression: JSON.stringify({
+        type: 'comparison',
+        comparison: { operator: 'string_like', pid: 8, value: 'Apple' },
+    }),
     limit: 5,
 });
 ```
@@ -185,8 +190,8 @@ All methods return data directly and throw on non-2xx responses.
 
 **Entity search and lookup:**
 
-| Method | Signature | Purpose |
-|---|---|---|
+| Method         | Signature                  | Purpose                                 |
+| -------------- | -------------------------- | --------------------------------------- |
 | `findEntities` | `(body: FindEntitiesBody)` | Expression-based search (see `find.md`) |
 
 > **Entity search**: Use `findEntities()` with `string_like` on the name PID
@@ -201,25 +206,25 @@ All methods return data directly and throw on non-2xx responses.
 
 **Properties and schema:**
 
-| Method | Signature | Purpose |
-|---|---|---|
-| `getSchema` | `()` | All entity types (flavors) and properties (PIDs) |
+| Method              | Signature                                | Purpose                                                                              |
+| ------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------ |
+| `getSchema`         | `()`                                     | All entity types (flavors) and properties (PIDs)                                     |
 | `getPropertyValues` | `(body: { eids: string, pids: string })` | Property values (eids: JSON array of NEID strings; pids: JSON array of numeric PIDs) |
-| `summarizeProperty` | `(pid: number)` | Summary stats for a property |
+| `summarizeProperty` | `(pid: number)`                          | Summary stats for a property                                                         |
 
 **Relationships and graph:**
 
-| Method | Signature | Purpose |
-|---|---|---|
+| Method         | Signature                        | Purpose                                                      |
+| -------------- | -------------------------------- | ------------------------------------------------------------ |
 | `findEntities` | `(body: { expression, limit? })` | Find linked entities via `linked` expression (see `find.md`) |
 
 **Other:**
 
-| Method | Signature | Purpose |
-|---|---|---|
-| `getHealth` | `()` | Health check |
-| `getStatus` | `()` | Server status and capabilities |
-| `adaMessage` | `(body: AdaMessageBody)` | Ada AI chat |
+| Method       | Signature                | Purpose                        |
+| ------------ | ------------------------ | ------------------------------ |
+| `getHealth`  | `()`                     | Health check                   |
+| `getStatus`  | `()`                     | Server status and capabilities |
+| `adaMessage` | `(body: AdaMessageBody)` | Ada AI chat                    |
 
 ## Discovery-First Pattern
 
@@ -230,16 +235,16 @@ types or property names. Instead, discover them at runtime:
 1. **Get the schema** — `client.getSchema()` returns all entity types (flavors)
    and properties (PIDs) available in the system. See `schema.md`.
 
-   The schema response contains:
-   - **Flavors** (entity types): Company, Person, GovernmentOrg, etc.
-     Each flavor has a numeric ID and a human-readable name.
-   - **PIDs** (properties): name, country, industry, lei_code, etc.
-     Each PID has a type (`data_str`, `data_int`, `data_nindex`, etc.).
-   - Properties with type `data_nindex` are references to other entities —
-     resolve them with another `getPropertyValues` call.
+    The schema response contains:
+    - **Flavors** (entity types): Company, Person, GovernmentOrg, etc.
+      Each flavor has a numeric ID and a human-readable name.
+    - **PIDs** (properties): name, country, industry, lei_code, etc.
+      Each PID has a type (`data_str`, `data_int`, `data_nindex`, etc.).
+    - Properties with type `data_nindex` are references to other entities —
+      resolve them with another `getPropertyValues` call.
 
-   Use flavor names in `findEntities()` expressions and PID names in
-   `getPropertyValues()`.
+    Use flavor names in `findEntities()` expressions and PID names in
+    `getPropertyValues()`.
 
 2. **Search with expressions** — `client.findEntities()` uses a JSON expression
    language to search by type, property value, or relationship. See `find.md`.
@@ -269,10 +274,10 @@ For reliable agent behavior, prefer typed semantics over string heuristics:
 
 There are two schema endpoints with **different response shapes**:
 
-| Endpoint | Flavors at | Flavor ID field | Detail level |
-|----------|-----------|-----------------|--------------|
-| `GET /schema` | top-level (`res.flavors`) | `findex` | Rich (display names, units, domains) |
-| `GET /elemental/metadata/schema` | nested (`res.schema.flavors`) | `fid` | Basic (name + type only) |
+| Endpoint                         | Flavors at                    | Flavor ID field | Detail level                         |
+| -------------------------------- | ----------------------------- | --------------- | ------------------------------------ |
+| `GET /schema`                    | top-level (`res.flavors`)     | `findex`        | Rich (display names, units, domains) |
+| `GET /elemental/metadata/schema` | nested (`res.schema.flavors`) | `fid`           | Basic (name + type only)             |
 
 The TypeScript client's `getSchema()` calls `/elemental/metadata/schema`,
 so the response nests data under `.schema`. The generated types may suggest
@@ -296,12 +301,12 @@ The flavor identifier has **different field names** depending on the endpoint:
 Same value, different key. Always use a fallback:
 
 ```typescript
-const articleFlavor = flavors.find(f => f.name === 'article');
+const articleFlavor = flavors.find((f) => f.name === 'article');
 // Always use String() — safe for small IDs (12) and required for large ones
 const articleFid = String(articleFlavor?.fid ?? articleFlavor?.findex ?? '');
 
 // When building a FID lookup map:
-const fidMap = new Map(flavors.map(f => [String(f.fid ?? f.findex), f.name]));
+const fidMap = new Map(flavors.map((f) => [String(f.fid ?? f.findex), f.name]));
 ```
 
 The `is_type` expression in `/elemental/find` always uses the `fid` key
@@ -352,14 +357,14 @@ const filingNeid = String(res.values[0].value).padStart(20, '0'); // "0492613234
 ```typescript
 // WRONG — PIDs are numbers, not strings:
 const values = await client.getPropertyValues({
-  eids: JSON.stringify(['00416400910670863867']),
-  pids: JSON.stringify(['name', 'country', 'industry']),  // FAILS
+    eids: JSON.stringify(['00416400910670863867']),
+    pids: JSON.stringify(['name', 'country', 'industry']), // FAILS
 });
 
 // CORRECT — use numeric PIDs from getSchema():
 const values = await client.getPropertyValues({
-  eids: JSON.stringify(['00416400910670863867']),
-  pids: JSON.stringify([8, 313]),  // 8=name, 313=country (from schema)
+    eids: JSON.stringify(['00416400910670863867']),
+    pids: JSON.stringify([8, 313]), // 8=name, 313=country (from schema)
 });
 ```
 
@@ -409,7 +414,7 @@ const res = await client.getPropertyValues({
 const docNeids = (res.values ?? []).map((v) => String(v.value).padStart(20, '0'));
 ```
 
-See the **cookbook-data** rule for a full "Get filings for a company" recipe.
+See [cookbook-data.md](cookbook-data.md) in this skill for a full "Get filings for a company" recipe.
 
 ### Expression language pitfalls
 
@@ -455,14 +460,17 @@ source-specific schemas.
   `getPropertyValues()` with the relationship PID. Values are entity IDs
   that must be zero-padded to 20 characters.
 
-See the **cookbook-data** rule (news feed recipe) for a full example.
+See [cookbook-data.md](cookbook-data.md) (news feed recipe) for a full example.
 
 ## Error Handling
 
 ```typescript
 try {
     const data = await client.findEntities({
-        expression: JSON.stringify({ type: 'comparison', comparison: { operator: 'string_like', pid: 8, value: 'Apple' } }),
+        expression: JSON.stringify({
+            type: 'comparison',
+            comparison: { operator: 'string_like', pid: 8, value: 'Apple' },
+        }),
         limit: 5,
     });
 } catch (error) {
@@ -479,7 +487,9 @@ functions instead:
 import { getArticle } from '@yottagraph-app/elemental-api/client';
 
 const response = await getArticle(artid);
-if (response.status === 404) { /* handle not found */ }
+if (response.status === 404) {
+    /* handle not found */
+}
 ```
 
 ## Lovelace MCP Servers
@@ -490,25 +500,25 @@ data exploration. **Check your tool list** — if tools like
 exploration interface before writing code. If they don't appear, the
 servers aren't connected; use curl and the skill docs instead.
 
-| Server | What it provides |
-|---|---|
-| `lovelace-elemental` | Knowledge Graph: entities, relationships, events, sentiment, schema discovery |
-| `lovelace-stocks` | Stock/financial market data |
-| `lovelace-wiki` | Wikipedia entity enrichment |
-| `lovelace-polymarket` | Prediction market data |
+| Server                | What it provides                                                              |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `lovelace-elemental`  | Knowledge Graph: entities, relationships, events, sentiment, schema discovery |
+| `lovelace-stocks`     | Stock/financial market data                                                   |
+| `lovelace-wiki`       | Wikipedia entity enrichment                                                   |
+| `lovelace-polymarket` | Prediction market data                                                        |
 
 ### MCP Tool Quick Reference
 
-| Tool | Purpose | Use to verify... |
-|---|---|---|
-| `elemental_get_schema` | Discover entity types (flavors), properties, and relationships | Flavor IDs, property IDs, data types |
-| `elemental_get_entity` | Look up entity by name or NEID; returns properties | Entity resolution, property shapes |
-| `elemental_get_related` | Related entities with type/relationship filters | Relationship types and traversal |
-| `elemental_get_relationships` | Relationship types and counts between two entities | Edge types between specific entities |
-| `elemental_graph_neighborhood` | Most influential neighbors of an entity | Graph connectivity |
-| `elemental_graph_sentiment` | Sentiment analysis from news articles | Sentiment data availability |
-| `elemental_get_events` | Events for an entity or by search query | Event categories and shapes |
-| `elemental_health` | Health check | Server connectivity |
+| Tool                           | Purpose                                                        | Use to verify...                     |
+| ------------------------------ | -------------------------------------------------------------- | ------------------------------------ |
+| `elemental_get_schema`         | Discover entity types (flavors), properties, and relationships | Flavor IDs, property IDs, data types |
+| `elemental_get_entity`         | Look up entity by name or NEID; returns properties             | Entity resolution, property shapes   |
+| `elemental_get_related`        | Related entities with type/relationship filters                | Relationship types and traversal     |
+| `elemental_get_relationships`  | Relationship types and counts between two entities             | Edge types between specific entities |
+| `elemental_graph_neighborhood` | Most influential neighbors of an entity                        | Graph connectivity                   |
+| `elemental_graph_sentiment`    | Sentiment analysis from news articles                          | Sentiment data availability          |
+| `elemental_get_events`         | Events for an entity or by search query                        | Event categories and shapes          |
+| `elemental_health`             | Health check                                                   | Server connectivity                  |
 
 MCP tools handle entity resolution, PID lookups, and NEID formatting
 automatically. Use them to discover IDs and verify data exists before

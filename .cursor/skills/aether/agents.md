@@ -1,9 +1,3 @@
----
-description: Rules for developing ADK agents in the agents/ directory
-globs: agents/**
-alwaysApply: false
----
-
 # Agent Development (Google ADK)
 
 This project supports developing and deploying AI agents alongside the UI. Agents live in the `agents/` directory and deploy to Vertex AI Agent Engine via the `/deploy_agent` command.
@@ -49,14 +43,15 @@ root_agent = Agent(
 ```
 
 Key rules:
+
 - The `agent.py` file MUST export a variable named `root_agent`
 - Tool functions should have detailed docstrings -- the LLM reads these to understand when and how to use each tool
 - Use `google-adk` for the agent framework, `httpx` for HTTP calls
 - Pin dependency versions in `requirements.txt` for reproducible deployments
 
 For agents that call the **Elemental API** (`broadchurch_auth`, endpoints,
-local `ELEMENTAL_*` env vars), see the `agents-data` rule. For agents
-using **Elemental MCP tools**, the `agents-data` rule also covers
+local `ELEMENTAL_*` env vars), see [agents-data.md](agents-data.md) in this skill. For agents
+using **Elemental MCP tools**, [agents-data.md](agents-data.md) also covers
 `McpToolset` wiring — use `StreamableHTTPConnectionParams` (not
 `SseConnectionParams`) and read the `elemental-mcp-patterns` skill for
 response handling patterns.
@@ -160,17 +155,18 @@ The response includes an `agents` array:
 
 Each agent entry has:
 
-| Field | Type | Description |
-|---|---|---|
-| `name` | `string` | Agent directory name (e.g. `filing_analyst`) |
-| `display_name` | `string` | Human-readable name for the UI |
-| `engine_id` | `string` | Vertex AI Agent Engine resource ID — used as `{agentId}` in query/stream URLs |
+| Field          | Type     | Description                                                                   |
+| -------------- | -------- | ----------------------------------------------------------------------------- |
+| `name`         | `string` | Agent directory name (e.g. `filing_analyst`)                                  |
+| `display_name` | `string` | Human-readable name for the UI                                                |
+| `engine_id`    | `string` | Vertex AI Agent Engine resource ID — used as `{agentId}` in query/stream URLs |
 
 The `engine_id` is the key value — it becomes the `{agentId}` path
 parameter in `/api/agent/{agentId}/stream` (the local Nitro route) and
 the portal's `/authorize` endpoint.
 
 **How agents get populated:** The portal discovers agents from two sources:
+
 1. **Firestore** — agents registered by the deploy workflow (`deploy-agent.yml`
    calls `POST /api/agents/{tenantId}` to register)
 2. **Agent Engine API** — the portal also queries Vertex AI for reasoning
@@ -226,9 +222,26 @@ A typical stream for an agent that uses a tool:
 
 ```json
 [
-  { "content": { "parts": [{ "functionCall": { "name": "search", "args": {"q": "AAPL 8-K"} } }], "role": "model" } },
-  { "content": { "parts": [{ "functionResponse": { "name": "search", "response": {"results": ["..."]} } }], "role": "tool" } },
-  { "content": { "parts": [{ "text": "Here is the summary of the 8-K filing..." }], "role": "model" } }
+    {
+        "content": {
+            "parts": [{ "functionCall": { "name": "search", "args": { "q": "AAPL 8-K" } } }],
+            "role": "model"
+        }
+    },
+    {
+        "content": {
+            "parts": [
+                { "functionResponse": { "name": "search", "response": { "results": ["..."] } } }
+            ],
+            "role": "tool"
+        }
+    },
+    {
+        "content": {
+            "parts": [{ "text": "Here is the summary of the 8-K filing..." }],
+            "role": "model"
+        }
+    }
 ]
 ```
 
@@ -259,13 +272,13 @@ automatically.
 
 SSE event types:
 
-| Event | Data Shape | Description |
-|---|---|---|
-| `text` | `{ "text": "..." }` | Agent text output (replaces previous text) |
-| `function_call` | `{ "name": "...", "args": {...} }` | Agent is calling a tool |
-| `function_response` | `{ "name": "...", "response": {...} }` | Tool returned a result |
-| `error` | `{ "message": "...", "code": "..." }` | Error during processing (`code` is `PERMISSION_DENIED` for IAM failures) |
-| `done` | `{ "session_id": "...", "text": "..." }` | Stream complete with final text |
+| Event               | Data Shape                               | Description                                                              |
+| ------------------- | ---------------------------------------- | ------------------------------------------------------------------------ |
+| `text`              | `{ "text": "..." }`                      | Agent text output (replaces previous text)                               |
+| `function_call`     | `{ "name": "...", "args": {...} }`       | Agent is calling a tool                                                  |
+| `function_response` | `{ "name": "...", "response": {...} }`   | Tool returned a result                                                   |
+| `error`             | `{ "message": "...", "code": "..." }`    | Error during processing (`code` is `PERMISSION_DENIED` for IAM failures) |
+| `done`              | `{ "session_id": "...", "text": "..." }` | Stream complete with final text                                          |
 
 For custom agent UIs that need streaming, import `readSSE`:
 
@@ -299,14 +312,14 @@ to the original plain object are invisible to the template.
 // WRONG — local ref bypasses Vue's reactivity, UI won't update:
 const msg: ChatMessage = { id: '...', role: 'agent', text: '', streaming: true };
 messages.value.push(msg);
-msg.text = 'hello';        // data changes, but Vue doesn't know
-msg.streaming = false;     // template still shows typing indicator
+msg.text = 'hello'; // data changes, but Vue doesn't know
+msg.streaming = false; // template still shows typing indicator
 
 // CORRECT — access through the reactive array:
 messages.value.push({ id: '...', role: 'agent', text: '', streaming: true });
 const idx = messages.value.length - 1;
-messages.value[idx].text = 'hello';        // Vue detects this
-messages.value[idx].streaming = false;     // template re-renders
+messages.value[idx].text = 'hello'; // Vue detects this
+messages.value[idx].streaming = false; // template re-renders
 ```
 
 The `useAgentChat` composable uses the correct pattern internally (via an
@@ -349,7 +362,7 @@ agents (MCP or REST-backed):
 
 This applies to ADK agent tools, where the LLM reads tool output directly.
 MCP server tools follow different conventions (structured dicts/lists) — see
-the `mcp-servers` rule.
+[mcp-servers.md](mcp-servers.md).
 
 The agent's LLM will try to interpret whatever the tool returns. Raw API
 responses with nested dicts, numeric IDs, and arrays of unlabeled values
@@ -472,6 +485,7 @@ Passing a raw `McpToolset` as the agent's only tool source and writing a
 long system prompt does **not** satisfy the spec.
 
 `McpToolset` passthrough means:
+
 - The LLM receives raw JSON responses — no Markdown formatting, no
   human-readable reports
 - No session-state caching — repeated queries for the same entity make

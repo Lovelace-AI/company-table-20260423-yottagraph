@@ -1,8 +1,3 @@
----
-description: .env variable reference (APP_ID, USER_NAME, QUERY_SERVER_ADDRESS, etc.). Apply when adding env vars, configuring Auth0 bypass, or inspecting runtime config.
-alwaysApply: false
----
-
 | Variable                           | Purpose                          | Default                                 |
 | ---------------------------------- | -------------------------------- | --------------------------------------- |
 | `NUXT_PUBLIC_APP_ID`               | Unique app identifier            | derived from directory name             |

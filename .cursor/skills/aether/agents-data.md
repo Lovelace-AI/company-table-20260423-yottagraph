@@ -1,9 +1,3 @@
----
-description: "ADK agents calling the Elemental API via broadchurch_auth and local testing env vars."
-alwaysApply: false
-globs: agents/**
----
-
 # Agents: Elemental API (Query Server)
 
 ## Connecting to the Elemental API
@@ -46,12 +40,14 @@ dev (`agents/` on sys.path → absolute import) and Agent Engine runtime
 `broadchurch.yaml` directly — `broadchurch_auth` handles all of this.
 
 Key endpoints:
+
 - `GET /elemental/metadata/schema` — entity types and properties
 - `POST /elemental/find` — search for entities by expression
 - `POST /entities/search` — search for entities by name (batch, scored)
 - `POST /elemental/entities/properties` — get entity property values
 
 Requirements for agents using the Elemental API (add to `requirements.txt`):
+
 ```
 google-auth>=2.20.0
 pyyaml>=6.0
@@ -160,6 +156,7 @@ def _get_mcp_url(server_name: str = "elemental") -> str:
 ```
 
 For **local dev**, set the env var:
+
 ```bash
 export ELEMENTAL_MCP_URL="https://mcp.news.prod.g.lovelace.ai/elemental/mcp"
 ```

@@ -1,8 +1,3 @@
----
-description: Apply when creating or editing page templates, layouts, scrollable content, data tables, or loading states in Vue/Vuetify components.
-alwaysApply: false
----
-
 # UI Patterns
 
 ## Vuetify Layout System
@@ -14,6 +9,7 @@ alwaysApply: false
 ## Page Layout Template
 
 For pages with a header and scrollable content, use flexbox:
+
 - `d-flex flex-column` on the column container
 - `flex-shrink-0` on fixed elements (header, toolbar)
 - `flex-grow-1 overflow-y-auto` on scrollable content
@@ -50,7 +46,7 @@ Full page template covering all four data states (loading, error, empty, content
 
 - Cards inside `v-dialog` automatically get `variant="flat"` (solid background) via the nested Vuetify default in `nuxt.config.ts`. No manual override needed.
 - Use `v-card` directly inside `v-dialog` — it will have a solid surface background despite the global `outlined` default.
-- See the **cookbook** rule for a full dialog pattern.
+- See [cookbook.md](cookbook.md) in this skill for a full dialog pattern.
 
 ## Loading States
 

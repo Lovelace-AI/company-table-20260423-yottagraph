@@ -1,8 +1,3 @@
----
-description: "DESIGN.md workflow, feature docs, starter app is placeholder. Read when starting work, planning features, or updating project design."
-alwaysApply: false
----
-
 # Design
 
 Read `DESIGN.md` before starting any work. It is the source of truth for project vision, architecture, and current implementation status.

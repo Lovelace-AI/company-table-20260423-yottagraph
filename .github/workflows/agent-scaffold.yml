@@ -40,7 +40,7 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          claude -p "You are scaffolding a new Aether project. Read DESIGN.md for the project vision and goals. Based on those goals, generate an initial set of Nuxt features/pages that bring the design to life. Follow the patterns in .cursor/rules/ for architecture guidance. Focus on creating a working skeleton that demonstrates the core functionality described in DESIGN.md. Commit nothing — just write the files." --allowedTools Edit,Write,Read,Glob,Grep
+          claude -p "You are scaffolding a new Aether project. Read DESIGN.md for the project vision and goals. Based on those goals, generate an initial set of Nuxt features/pages that bring the design to life. Read `.cursor/skills/aether/SKILL.md` first and follow the patterns in the `aether` skill topics for architecture guidance. Focus on creating a working skeleton that demonstrates the core functionality described in DESIGN.md. Commit nothing — just write the files." --allowedTools Edit,Write,Read,Glob,Grep
 
       - name: Commit scaffolded code
         run: |

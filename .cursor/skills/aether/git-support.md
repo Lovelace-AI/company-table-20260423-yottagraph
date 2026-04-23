@@ -1,11 +1,6 @@
----
-description: "Git commit workflow and conventions. Apply when finishing implementation work, making commits, or troubleshooting git/pre-commit failures."
-alwaysApply: false
----
-
 # Git Workflow
 
-This rule applies both when an agent is committing its own work and when helping a user commit theirs.
+This guidance applies both when an agent is committing its own work and when helping a user commit theirs.
 
 ## Committing
 
@@ -14,9 +9,9 @@ Commit when you finish a meaningful unit of work — a feature, a fix, a refacto
 ### Steps
 
 1. **Run formatting first** — this is required or the commit will fail:
-   ```bash
-   npm run format
-   ```
+    ```bash
+    npm run format
+    ```
 2. **Stage all files** — always use `git add -A`.
 3. **Commit** with the message format below.
 4. **Verify the commit succeeded** with `git status`. If it failed, see Pre-commit Failure Troubleshooting below. Do not proceed until the commit is confirmed.

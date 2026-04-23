@@ -1,17 +1,12 @@
----
-description: "Data-fetching UI recipes: entity search, news feed, filings, gateway helpers. Read with the `data` rule when building pages that use the Query Server or platform data."
-alwaysApply: false
----
-
 # Data-fetching cookbook
 
-Copy-paste patterns that call the Elemental API, gateway, or helpers. For platform API details see the `data` rule. Pure UI patterns (tables, forms, charts) are in the `cookbook` rule.
+Copy-paste patterns that call the Elemental API, gateway, or helpers. For platform API details see [data.md](data.md) in this skill. Pure UI patterns (tables, forms, charts) are in [cookbook.md](cookbook.md).
 
 ## 1. Entity Search Page
 
 Search for entities by name and display results. Uses `$fetch` directly
 because `POST /entities/search` (batch name resolution with scored ranking)
-is not wrapped by the generated `useElementalClient()` — see the `data` rule.
+is not wrapped by the generated `useElementalClient()` — see [data.md](data.md).
 
 ```vue
 <template>
@@ -182,8 +177,8 @@ for runtime flavor/PID discovery and `buildGatewayUrl()` for gateway access.
                 const vals = valueMap.get(neid) ?? {};
                 return {
                     neid,
-                    name: namePid ? (vals[namePid] as string) ?? neid : neid,
-                    sentiment: sentimentPid ? (vals[sentimentPid] as number) ?? null : null,
+                    name: namePid ? ((vals[namePid] as string) ?? neid) : neid,
+                    sentiment: sentimentPid ? ((vals[sentimentPid] as number) ?? null) : null,
                 };
             });
         } catch (e: any) {
@@ -215,12 +210,7 @@ Simpler version of recipe #1 using the pre-built `searchEntities()` helper.
             {{ error }}
         </v-alert>
         <v-list v-if="results.length" class="mt-4">
-            <v-list-item
-                v-for="r in results"
-                :key="r.neid"
-                :title="r.name"
-                :subtitle="r.neid"
-            />
+            <v-list-item v-for="r in results" :key="r.neid" :title="r.name" :subtitle="r.neid" />
         </v-list>
         <v-empty-state
             v-else-if="searched && !loading"
@@ -266,7 +256,7 @@ properties are then fetched via `useElementalClient()`.
 **Important:** For graph-layer entities (person, organization, location),
 use `findEntities` with a `linked` expression. For property-layer entities
 (documents, filings, articles), use `getPropertyValues` with the
-relationship PID. See the `data` rule for the two-layer architecture.
+relationship PID. See [data.md](data.md) for the two-layer architecture.
 
 ```vue
 <template>
@@ -366,7 +356,7 @@ relationship PID. See the `data` rule for the two-layer architecture.
             });
 
             const docNeids = (propRes.values ?? []).map((v: any) =>
-                String(v.value).padStart(20, '0'),
+                String(v.value).padStart(20, '0')
             );
 
             function getEntityNameUrl(neid: string) {
@@ -379,15 +369,14 @@ relationship PID. See the `data` rule for the two-layer architecture.
             const names = await Promise.all(
                 docNeids.map(async (neid: string) => {
                     try {
-                        const res = await $fetch<{ name: string }>(
-                            getEntityNameUrl(neid),
-                            { headers: { 'X-Api-Key': getApiKey() } },
-                        );
+                        const res = await $fetch<{ name: string }>(getEntityNameUrl(neid), {
+                            headers: { 'X-Api-Key': getApiKey() },
+                        });
                         return res.name || neid;
                     } catch {
                         return neid;
                     }
-                }),
+                })
             );
 
             filings.value = docNeids.map((neid: string, i: number) => ({
@@ -430,11 +419,7 @@ Type-ahead search that shows results in a dropdown as the user types. Uses
             @click:clear="onClear"
         />
 
-        <v-card
-            v-if="showMenu && suggestions.length > 0"
-            class="search-dropdown"
-            elevation="8"
-        >
+        <v-card v-if="showMenu && suggestions.length > 0" class="search-dropdown" elevation="8">
             <v-list density="compact">
                 <v-list-item
                     v-for="item in suggestions"
@@ -457,7 +442,7 @@ Type-ahead search that shows results in a dropdown as the user types. Uses
             icon?: string;
             flavors?: string[];
         }>(),
-        { label: 'Search', icon: 'mdi-magnify', flavors: undefined },
+        { label: 'Search', icon: 'mdi-magnify', flavors: undefined }
     );
 
     const emit = defineEmits<{

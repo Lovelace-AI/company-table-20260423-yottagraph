@@ -1,8 +1,3 @@
----
-description: "Error recovery and build failure troubleshooting. Apply when something broke, build failed, npm run build errors, or user wants to restore previous behavior."
-alwaysApply: false
----
-
 # Restoring Broken Functionality from Git History
 
 **Trigger phrases:** "this used to work", "this broke", "it was working before", "I want it back the way it was", "it looked right before", or similar.
@@ -12,6 +7,7 @@ alwaysApply: false
 ## 1. Gather Context
 
 Ask the user:
+
 - What specifically broke or changed?
 - When do they remember it last working? (A rough timeframe, a branch, a specific action, etc.)
 
@@ -33,7 +29,7 @@ Show the user the combined result (current code + restored pieces) and have them
 
 ## 5. Commit the Restoration
 
-Only after the user confirms the restored version is correct, follow the standard git workflow (see `git-support.mdc`) to commit the changes.
+Only after the user confirms the restored version is correct, follow the standard git workflow (see [git-support.md](git-support.md) in this skill) to commit the changes.
 
 # Common Build Errors
 
@@ -49,7 +45,7 @@ import { myHelper } from '~/utils/myHelper';
 
 ### `Type 'X' is not assignable to type 'Y'`
 
-Usually an API response shape mismatch. Common case: `getSchema()` nests data under `response.schema` but TypeScript types suggest top-level access. See the `data` rule's API Gotchas section.
+Usually an API response shape mismatch. Common case: `getSchema()` nests data under `response.schema` but TypeScript types suggest top-level access. See [data.md](data.md)'s API Gotchas section in this skill.
 
 ### `SyntaxError` or blank page with "missing export"
 

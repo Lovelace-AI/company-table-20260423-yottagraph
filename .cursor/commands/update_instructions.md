@@ -1,6 +1,6 @@
 # Update Instructions
 
-Update Cursor rules, commands, and skills from the `@yottagraph-app/aether-instructions` npm package.
+Update Cursor commands and skills from the `@yottagraph-app/aether-instructions` npm package.
 
 ## Overview
 
@@ -10,9 +10,10 @@ This command downloads the latest instructions package and extracts it to your `
 
 1. Downloads the latest `@yottagraph-app/aether-instructions` package
 2. Deletes files listed in the existing manifest
-3. Extracts fresh files from the package
-4. Writes a new manifest
-5. Commits the changes
+3. Removes the deprecated `.cursor/rules/` directory if present (rules were replaced by the `aether` skill)
+4. Extracts fresh files from the package
+5. Writes a new manifest
+6. Commits the changes
 
 **Your files are safe:** Only paths listed in the manifest are removed before reinstall. Other files under `.cursor/` are left alone.
 
@@ -91,6 +92,12 @@ if [ -f .cursor/.aether-instructions-manifest ]; then
 fi
 ```
 
+Also remove the deprecated `.cursor/rules/` directory (superseded by the `aether` skill in `.cursor/skills/aether/`):
+
+```bash
+rm -rf .cursor/rules
+```
+
 ---
 
 ## Step 5: Copy New Files
@@ -98,13 +105,12 @@ fi
 Create directories if needed:
 
 ```bash
-mkdir -p .cursor/rules .cursor/commands .cursor/skills
+mkdir -p .cursor/commands .cursor/skills
 ```
 
 Copy files from the extracted package:
 
 ```bash
-cp "$TEMP_DIR/package/rules/"* .cursor/rules/ 2>/dev/null || true
 cp "$TEMP_DIR/package/commands/"* .cursor/commands/ 2>/dev/null || true
 cp -r "$TEMP_DIR/package/skills/"* .cursor/skills/ 2>/dev/null || true
 ```
@@ -122,14 +128,17 @@ If this project uses **mcp-only** (or another non-default mode), re-apply the sa
 ```bash
 MODE=$(tr -d '\n' < .cursor/.aether-data-mode 2>/dev/null || echo "api-mcp")
 PKG="$TEMP_DIR/package"
-if [ "$MODE" != "api-mcp" ] && [ -d "$PKG/variants/$MODE/rules" ]; then
-  cp "$PKG/variants/$MODE/rules/"* .cursor/rules/ 2>/dev/null || true
-fi
 if [ "$MODE" != "api-mcp" ] && [ -d "$PKG/variants/$MODE/commands" ]; then
   cp "$PKG/variants/$MODE/commands/"* .cursor/commands/ 2>/dev/null || true
 fi
 if [ "$MODE" != "api-mcp" ] && [ -d "$PKG/variants/$MODE/skills" ]; then
-  cp -r "$PKG/variants/$MODE/skills/"* .cursor/skills/ 2>/dev/null || true
+  # Overlay per-file so default skill topics survive
+  for src_dir in "$PKG/variants/$MODE/skills/"*/; do
+    [ -d "$src_dir" ] || continue
+    dir_name=$(basename "$src_dir")
+    mkdir -p ".cursor/skills/$dir_name"
+    cp "$src_dir"* ".cursor/skills/$dir_name/" 2>/dev/null || true
+  done
 fi
 if [ "$MODE" = "mcp-only" ]; then
   rm -rf .cursor/skills/elemental-api
@@ -146,14 +155,13 @@ Build a manifest of all installed files (one relative path per line). **Do not**
 
 ```bash
 {
-  for f in .cursor/rules/*.mdc; do [ -f "$f" ] && echo "rules/$(basename "$f")"; done
   for f in .cursor/commands/*.md; do [ -f "$f" ] && echo "commands/$(basename "$f")"; done
   for d in .cursor/skills/*/; do [ -d "$d" ] && echo "skills/$(basename "$d")"; done
   [ -f "$TEMP_DIR/package/AGENTS.md" ] && [ -f ./AGENTS.md ] && echo "root/AGENTS.md"
 } > .cursor/.aether-instructions-manifest
 ```
 
-If the repo uses **bash** for this loop and a glob might match nothing, run `shopt -s nullglob` first so the loops don’t treat `*.mdc` as a literal filename.
+If the repo uses **bash** for this loop and a glob might match nothing, run `shopt -s nullglob` first so the loops don't treat `*.md` as a literal filename.
 
 Write the version marker:
 
@@ -179,7 +187,6 @@ Count what was installed:
 
 ```bash
 wc -l < .cursor/.aether-instructions-manifest
-ls .cursor/rules/*.mdc 2>/dev/null | wc -l
 ls .cursor/commands/*.md 2>/dev/null | wc -l
 ls -d .cursor/skills/*/ 2>/dev/null | wc -l
 ```
@@ -188,7 +195,6 @@ Report to user:
 
 > Updated to @yottagraph-app/aether-instructions@X.Y.Z
 >
-> - Rules: N files
 > - Commands: N files
 > - Skills: N directories
 
@@ -199,13 +205,15 @@ Report to user:
 Commit the updated instruction files. A root `.gitignore` rule like `skills/` can **ignore** `.cursor/skills/`; if `git add .cursor/skills/` reports ignored paths, force-add:
 
 ```bash
-git add .cursor/rules/ .cursor/commands/ .cursor/.aether-instructions-version .cursor/.aether-instructions-manifest
+git add .cursor/commands/ .cursor/.aether-instructions-version .cursor/.aether-instructions-manifest
 git add -f .cursor/skills/
 [ -f AGENTS.md ] && git add AGENTS.md
+# Remove the legacy rules dir from tracking if it was committed in an earlier install
+git rm -rf --cached --ignore-unmatch .cursor/rules 2>/dev/null || true
 git commit -m "Update instructions to vX.Y.Z"
 ```
 
-Use the repo’s commit convention if applicable (e.g. `[Agent commit] Update instructions to vX.Y.Z`).
+Use the repo's commit convention if applicable (e.g. `[Agent commit] Update instructions to vX.Y.Z`).
 
 > Changes committed. Your instructions are now up to date.
 
@@ -225,7 +233,7 @@ If you get permission errors:
 
 > Try running with appropriate permissions, or check that `.cursor/` is writable.
 
-### Want to customize a rule, command, or AGENTS.md?
+### Want to customize a command, skill topic, or AGENTS.md?
 
 If you need to modify a package-provided file (including the root `AGENTS.md`):
 

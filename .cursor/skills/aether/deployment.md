@@ -1,8 +1,3 @@
----
-description: App, agent, and MCP server deployment targets (Vercel, Vertex AI Agent Engine, Cloud Run). Apply when pushing to main, running /deploy_agent or /deploy_mcp, or explaining how code reaches production.
-alwaysApply: false
----
-
 ### App (Nuxt UI + server routes)
 
 Vercel auto-deploys on every push to `main`. Preview deployments are created for

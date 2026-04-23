@@ -1,9 +1,3 @@
----
-description: Rules for developing MCP servers in the mcp-servers/ directory
-globs: mcp-servers/**
-alwaysApply: false
----
-
 # MCP Server Development (FastMCP)
 
 This project supports developing and deploying custom MCP (Model Context Protocol) servers alongside the UI. Servers live in the `mcp-servers/` directory and deploy to Google Cloud Run via the `/deploy_mcp` command.
@@ -63,6 +57,7 @@ if __name__ == "__main__":
 ```
 
 Key rules:
+
 - The FastMCP instance MUST be named `mcp` — the Dockerfile runs `fastmcp run server:mcp` to find it
 - FastMCP 2.x takes a single positional name argument: `FastMCP("name")`. Do NOT pass `name=` or `description=` as keyword arguments
 - Use `@mcp.tool()` decorators to define tools
@@ -88,6 +83,7 @@ python -m fastmcp run server:mcp --transport streamable-http --host 0.0.0.0 --po
 ## Deployment
 
 Deploy with the `/deploy_mcp` Cursor command. This will:
+
 1. Build a container image via Cloud Build
 2. Deploy to Cloud Run with IAM authentication
 3. Grant invoker permissions to tenant and Portal service accounts
@@ -102,7 +98,7 @@ Once deployed, agents can connect to your MCP server. Add the Cloud Run URL to y
 
 - One server per data domain or external service
 - Keep tools focused and well-documented
-- Return structured data (dicts/lists), not raw strings — MCP handles serialization via the protocol. (This differs from ADK agent tools, which should return formatted strings because the LLM reads tool output directly — see the `agents` rule.)
+- Return structured data (dicts/lists), not raw strings — MCP handles serialization via the protocol. (This differs from ADK agent tools, which should return formatted strings because the LLM reads tool output directly — see [agents.md](agents.md) in this skill.)
 - Handle errors by returning descriptive error messages in the response
 - Use environment variables for API keys and configuration (never hardcode secrets)
 - For secrets, use GCP Secret Manager and access at runtime

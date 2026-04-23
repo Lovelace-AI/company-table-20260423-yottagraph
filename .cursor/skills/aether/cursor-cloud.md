@@ -1,8 +1,3 @@
----
-description: Cursor Cloud environment quirks (Node managed by env, dev server auto-started, skip browser testing during initial setup). Apply when the environment check in AGENTS.md indicates Cursor Cloud ($HOME under /root or /home/ubuntu, or a dev-server terminal was auto-started), or when the user mentions Cursor Cloud.
-alwaysApply: false
----
-
 If you are in Cursor Cloud, the `environment.json` install step runs
 `init-project.js` and `npm install` automatically, and starts a dev server
 on port 3000.

@@ -1,8 +1,3 @@
----
-description: Apply when working with user preferences, settings persistence, usePrefsStore, the Pref class, KV storage, or app namespacing (NUXT_PUBLIC_APP_ID).
-alwaysApply: false
----
-
 # User Preferences
 
 Preferences are persisted to Upstash Redis (KV) via `usePrefsStore()` from
@@ -28,7 +23,7 @@ const myPref = new Pref<string>(docPath, 'fieldName', 'defaultValue');
 await myPref.initialize();
 
 myPref.r.value; // reactive ref (use in templates)
-myPref.v;       // getter shorthand
+myPref.v; // getter shorthand
 myPref.set('new value'); // persists to KV
 ```
 
@@ -79,13 +74,13 @@ routes directly from client-side code:
 ```typescript
 // Read
 const value = await $fetch('/api/kv/read', {
-  params: { docPath: '/users/abc/settings', fieldName: 'theme' }
+    params: { docPath: '/users/abc/settings', fieldName: 'theme' },
 });
 
 // Write
 await $fetch('/api/kv/write', {
-  method: 'POST',
-  body: { docPath: '/users/abc/settings', fieldName: 'theme', value: '"dark"' }
+    method: 'POST',
+    body: { docPath: '/users/abc/settings', fieldName: 'theme', value: '"dark"' },
 });
 ```
 
@@ -121,8 +116,8 @@ function useMyFeaturePrefs() {
 
 ## Scope Guidance
 
-| App-specific | Global |
-|---|---|
-| Layout prefs, favorites | Language |
-| Watchlists, feature settings | Accessibility |
-| Feature-specific settings | Timezone, notifications |
+| App-specific                 | Global                  |
+| ---------------------------- | ----------------------- |
+| Layout prefs, favorites      | Language                |
+| Watchlists, feature settings | Accessibility           |
+| Feature-specific settings    | Timezone, notifications |

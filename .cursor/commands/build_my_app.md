@@ -102,17 +102,16 @@ Then read these files to understand what's available:
 
 1. `DESIGN.md` -- project vision and current status
 2. `broadchurch.yaml` -- project config (name, gateway URL, etc.)
-3. **The `data` cursor rule** -- this is critical. It describes the Query Server, the platform's primary data source. Build against platform APIs, not external sources.
-4. **`.cursor/skills/`** — Each subdirectory is one skill. List them, open each skill’s entry (usually `SKILL.md`) and follow its structure to learn what is documented (APIs, schemas, helpers, etc.).
-5. `.cursor/rules/` -- scan rule names to know what other patterns are available
+3. **The `aether` skill's `data.md` topic** (`.cursor/skills/aether/data.md`) — this is critical. It describes the Query Server, the platform's primary data source. Build against platform APIs, not external sources.
+4. **`.cursor/skills/`** — Each subdirectory is one skill. Start with `.cursor/skills/aether/SKILL.md` — it's the index for every Aether topic (architecture, data, UI, agents, MCP, deployment, etc.). Then open each other skill's entry (usually `SKILL.md`) and follow its structure to learn what is documented (APIs, schemas, helpers, etc.).
 
-**Important: Use the platform's data.** This app runs on the Lovelace platform, which provides a Query Server with entities, news, filings, sentiment, relationships, events, and more. Read the `data` rule and the skills under `.cursor/skills/` to understand what data is available. Use `getSchema()` to discover entity types and properties at runtime.
+**Important: Use the platform's data.** This app runs on the Lovelace platform, which provides a Query Server with entities, news, filings, sentiment, relationships, events, and more. Read [`data.md`](../skills/aether/data.md) in the `aether` skill and the other skills under `.cursor/skills/` to understand what data is available. Use `getSchema()` to discover entity types and properties at runtime.
 
 Key capabilities:
 
-- **Query Server / Elemental API** -- the primary data source. Use `useElementalClient()` from `@yottagraph-app/elemental-api/client`. See the `data` rule.
-- **KV storage** -- always available for preferences and lightweight data (see `pref` rule)
-- **Neon Postgres** -- check if `DATABASE_URL` is in `.env` for database access (see `server` rule)
+- **Query Server / Elemental API** -- the primary data source. Use `useElementalClient()` from `@yottagraph-app/elemental-api/client`. See [`data.md`](../skills/aether/data.md) in the `aether` skill.
+- **KV storage** -- always available for preferences and lightweight data (see [`pref.md`](../skills/aether/pref.md) in the `aether` skill)
+- **Neon Postgres** -- may be available for relational data; see [`storage.md`](../skills/aether/storage.md) in the `aether` skill for how to check and how to use it
 - **AI agent chat** -- use the `useAgentChat` composable to build a chat UI for deployed agents
 - **MCP servers** -- Lovelace MCP servers may be available (check `.cursor/mcp.json`)
 - **Components** -- Vuetify 3 component library is available
@@ -191,7 +190,7 @@ Implement the plan:
 2. Extract reusable components into `components/`
 3. Put shared logic in `composables/`
 4. If the app needs navigation, add it to `app.vue` or to individual pages
-5. Use `Pref<T>` for any persisted settings (see `pref.mdc`)
+5. Use `Pref<T>` for any persisted settings (see [`pref.md`](../skills/aether/pref.md) in the `aether` skill)
 6. Use Vuetify components and the project's dark theme
 7. Update `DESIGN.md` with what you built
 

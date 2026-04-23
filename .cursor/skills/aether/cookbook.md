@@ -1,13 +1,8 @@
----
-description: "Copy-paste UI patterns for common pages: data table, form, chart, dialog, master-detail. For Query Server / data-fetching recipes see `cookbook-data`."
-alwaysApply: false
----
-
 # UI Pattern Cookbook
 
 Copy-paste patterns using the project's actual composables and Vuetify components. Adapt to your needs.
 
-**Data-fetching recipes** (entity search, news feed, filings, gateway helpers) live in the `cookbook-data` rule.
+**Data-fetching recipes** (entity search, news feed, filings, gateway helpers) live in [cookbook-data.md](cookbook-data.md).
 
 ## 2. Data Table Page
 
@@ -98,9 +93,7 @@ Form with field validation, submit handler, and user feedback.
                 variant="outlined"
                 class="mb-3"
             />
-            <v-btn type="submit" color="primary" :loading="saving" :disabled="!valid">
-                Save
-            </v-btn>
+            <v-btn type="submit" color="primary" :loading="saving" :disabled="!valid"> Save </v-btn>
         </v-form>
     </v-container>
 </template>

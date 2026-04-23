@@ -68,4 +68,4 @@ Compare logo and asset files in `public/` against the skill's `assets/` director
 
 ## Step 6: Commit
 
-Follow the `git-support.mdc` workflow to commit the changes.
+Follow the [`git-support.md`](../skills/aether/git-support.md) workflow in the `aether` skill to commit the changes.
