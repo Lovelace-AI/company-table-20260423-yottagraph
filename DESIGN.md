@@ -18,12 +18,19 @@ This app creates a table of data about organizations from a variety of sources. 
 
 ## Status
 
-Initial scaffold built (2026-04-23). The home page renders the company
-table described in the Vision; users can search for any organization
-indexed by Lovelace and add it as a row. Each row is hydrated with the
-most recent values for CEO, location, office count, ticker, stock price,
-revenue, net income, total assets, total liabilities, and 24-hour news
-mentions, with the source date in parentheses.
+Initial scaffold built and verified end-to-end (2026-04-23). The home
+page renders the company table described in the Vision; users can
+search for any organization indexed by Lovelace and add it as a row.
+Each row is hydrated with the most recent values for CEO, location,
+office count, ticker, stock price, revenue, net income, total assets,
+total liabilities, and 24-hour news mentions, with the source date in
+parentheses.
+
+Verification: tested in Chrome with Microsoft / Apple / JPMorgan rows.
+All numeric financials, stock prices (looked up via the company's
+ticker on the linked `financial_instrument`), CEO names, locations,
+and 24h news counts populate as expected, each annotated with its
+recorded date.
 
 Persistence: the list of tracked companies is stored as a `Pref` in the
 per-user / per-app KV namespace, so refreshing the page restores the
