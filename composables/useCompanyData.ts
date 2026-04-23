@@ -14,11 +14,15 @@
  *
  * Each cell returns `{ value, date }` so the UI can show
  * "value (YYYY-MM-DD)" per the project brief.
+ *
+ * IMPORTANT: PIDs and 19-digit relationship targets exceed
+ * Number.MAX_SAFE_INTEGER. We parse the schema/property responses through
+ * `bigJsonParse` to keep those values as strings — using JS numbers would
+ * silently corrupt them and cause empty rows.
  */
 
-import { useElementalClient } from '@yottagraph-app/elemental-api/client';
-
 import { buildGatewayUrl, gatewayHeaders, padNeid } from '~/utils/elementalHelpers';
+import { bigJsonParse } from '~/utils/bigJson';
 
 export interface DataCell<T = string | number | null> {
     value: T;
@@ -55,15 +59,68 @@ const PROPS = [
     'total_liabilities',
     'traded_as',
     'appears_in',
+    'close_price',
 ] as const;
 
 type PropName = (typeof PROPS)[number];
 
 interface PropValueRow {
     eid: string;
-    pid: number;
+    pid: string;
     value: any;
     recorded_at?: string;
+}
+
+let _pidMapPromise: Promise<Map<PropName, string>> | null = null;
+
+async function fetchPidMap(): Promise<Map<PropName, string>> {
+    if (_pidMapPromise) return _pidMapPromise;
+    _pidMapPromise = (async () => {
+        const url = buildGatewayUrl('elemental/metadata/schema');
+        const raw = await $fetch<string>(url, {
+            headers: { 'X-Api-Key': gatewayHeaders()['X-Api-Key'] },
+            responseType: 'text',
+        });
+        const parsed: any = bigJsonParse(raw);
+        const properties: any[] = parsed?.schema?.properties ?? parsed?.properties ?? [];
+        const map = new Map<PropName, string>();
+        for (const p of properties) {
+            const n = p.name as string;
+            if ((PROPS as readonly string[]).includes(n)) {
+                const id = String(p.pid ?? p.pindex);
+                if (id) map.set(n as PropName, id);
+            }
+        }
+        return map;
+    })().catch((e) => {
+        _pidMapPromise = null;
+        throw e;
+    });
+    return _pidMapPromise;
+}
+
+/**
+ * Call POST /elemental/entities/properties as form-urlencoded with
+ * JSON-stringified `eids` and `pids`, then parse with `bigJsonParse` so
+ * 64-bit PIDs and 19-digit relationship target values are preserved.
+ */
+async function fetchPropertyValues(eids: string[], pids: string[]): Promise<PropValueRow[]> {
+    if (!eids.length || !pids.length) return [];
+    const url = buildGatewayUrl('elemental/entities/properties');
+    const body = new URLSearchParams();
+    body.set('eids', JSON.stringify(eids));
+    body.set('pids', `[${pids.join(',')}]`);
+    const raw = await $fetch<string>(url, {
+        method: 'POST',
+        headers: {
+            'X-Api-Key': gatewayHeaders()['X-Api-Key'],
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body.toString(),
+        responseType: 'text',
+    });
+    const parsed: any = bigJsonParse(raw);
+    return (parsed?.values ?? []) as PropValueRow[];
 }
 
 function pickLatest(values: PropValueRow[]): PropValueRow | null {
@@ -108,17 +165,24 @@ function isoDate(s: string | null | undefined): string | null {
     return d.toISOString().slice(0, 10);
 }
 
-/**
- * Resolve a single PID by property name from a runtime PID map.
- */
-function pid(map: Map<string, number>, name: PropName): number | null {
-    return map.get(name) ?? null;
+async function resolveFinancialInstrument(ticker: string): Promise<string | null> {
+    try {
+        const res = await $fetch<any>(buildGatewayUrl('entities/search'), {
+            method: 'POST',
+            headers: gatewayHeaders(),
+            body: {
+                queries: [{ queryId: 1, query: ticker, flavors: ['financial_instrument'] }],
+                maxResults: 1,
+                includeNames: true,
+            },
+        });
+        const m = res?.results?.[0]?.matches?.[0];
+        return m ? padNeid(m.neid) : null;
+    } catch {
+        return null;
+    }
 }
 
-/**
- * Fetch the canonical display name for an entity by NEID.
- * Tolerates 404s (returns null) since some NEIDs aren't resolvable.
- */
 async function fetchName(neid: string): Promise<string | null> {
     try {
         const res = await $fetch<{ name?: string }>(buildGatewayUrl(`entities/${neid}/name`), {
@@ -131,22 +195,6 @@ async function fetchName(neid: string): Promise<string | null> {
 }
 
 export function useCompanyData() {
-    const client = useElementalClient();
-    const { refresh: refreshSchema, pidByName } = useElementalSchema();
-
-    /**
-     * Build the {name → pid} map for the properties we care about.
-     */
-    async function getPidMap(): Promise<Map<string, number>> {
-        await refreshSchema();
-        const out = new Map<string, number>();
-        for (const p of PROPS) {
-            const id = pidByName(p);
-            if (id !== null) out.set(p, id as number);
-        }
-        return out;
-    }
-
     /**
      * Search for an organization by name and return the best NEID + canonical name.
      */
@@ -184,45 +232,43 @@ export function useCompanyData() {
     async function loadCompany(neid: string, displayName: string): Promise<CompanyRow> {
         const row = emptyRow(neid, displayName);
 
-        const pidMap = await getPidMap();
-        const orgPids = (
-            [
-                'name',
-                'ticker',
-                'has_ceo',
-                'headquartered_in',
-                'headquarters_address',
-                'office_count',
-                'total_revenue',
-                'net_income',
-                'total_assets',
-                'total_liabilities',
-                'traded_as',
-            ] as PropName[]
-        )
-            .map((n) => pidMap.get(n))
-            .filter((x): x is number => x !== undefined);
-
-        let propsRes: any;
+        let pidMap: Map<PropName, string>;
         try {
-            propsRes = await client.getPropertyValues({
-                eids: JSON.stringify([neid]),
-                pids: JSON.stringify(orgPids),
-            } as any);
+            pidMap = await fetchPidMap();
+        } catch (e: any) {
+            row.error = e?.message || 'Failed to fetch schema';
+            return row;
+        }
+
+        const orgPropNames: PropName[] = [
+            'name',
+            'ticker',
+            'has_ceo',
+            'headquartered_in',
+            'headquarters_address',
+            'office_count',
+            'total_revenue',
+            'net_income',
+            'total_assets',
+            'total_liabilities',
+            'traded_as',
+        ];
+        const orgPids = orgPropNames.map((n) => pidMap.get(n)).filter((x): x is string => !!x);
+
+        let allValues: PropValueRow[];
+        try {
+            allValues = await fetchPropertyValues([neid], orgPids);
         } catch (e: any) {
             row.error = e?.message || 'Failed to fetch organization data';
             return row;
         }
 
-        const allValues: PropValueRow[] = (propsRes?.values ?? []) as PropValueRow[];
-
         function latestFor(propName: PropName): PropValueRow | null {
-            const id = pid(pidMap, propName);
-            if (id === null) return null;
-            return pickLatest(allValues.filter((v) => v.pid === id));
+            const id = pidMap.get(propName);
+            if (!id) return null;
+            return pickLatest(allValues.filter((v) => String(v.pid) === id));
         }
 
-        // Simple scalar properties
         const nameVal = latestFor('name');
         if (nameVal?.value) {
             row.name = { value: String(nameVal.value), date: isoDate(nameVal.recorded_at) };
@@ -243,7 +289,10 @@ export function useCompanyData() {
 
         const revVal = latestFor('total_revenue');
         if (revVal?.value !== undefined && revVal?.value !== null) {
-            row.totalRevenue = { value: Number(revVal.value), date: isoDate(revVal.recorded_at) };
+            row.totalRevenue = {
+                value: Number(revVal.value),
+                date: isoDate(revVal.recorded_at),
+            };
         }
 
         const niVal = latestFor('net_income');
@@ -264,8 +313,8 @@ export function useCompanyData() {
             };
         }
 
-        // Location: prefer headquartered_in (relationship → location entity) for the
-        // human-readable name; fall back to headquarters_address (formatted string).
+        // Location: prefer `headquartered_in` (relationship → location entity)
+        // for a clean place name; fall back to the formatted address string.
         const hqInVal = latestFor('headquartered_in');
         if (hqInVal?.value) {
             const locNeid = padNeid(String(hqInVal.value));
@@ -285,7 +334,6 @@ export function useCompanyData() {
             }
         }
 
-        // CEO: has_ceo (relationship → person entity)
         const ceoVal = latestFor('has_ceo');
         if (ceoVal?.value) {
             const personNeid = padNeid(String(ceoVal.value));
@@ -296,48 +344,46 @@ export function useCompanyData() {
             };
         }
 
-        // Stock price: traded_as (relationship → financial_instrument) → close_price
-        const tradedAsVal = latestFor('traded_as');
-        if (tradedAsVal?.value) {
-            const finNeid = padNeid(String(tradedAsVal.value));
-            const closePid = pidMap.get('name'); // placeholder, replaced below
-            const closePriceId = pidByName('close_price');
-            if (closePriceId !== null) {
-                try {
-                    const finRes: any = await client.getPropertyValues({
-                        eids: JSON.stringify([finNeid]),
-                        pids: JSON.stringify([closePriceId]),
-                    } as any);
-                    const finValues: PropValueRow[] = finRes?.values ?? [];
-                    const latest = pickLatest(finValues.filter((v) => v.pid === closePriceId));
+        // Stock price: the `traded_as` relationship is sparsely populated, so
+        // we look up the financial_instrument entity by ticker symbol instead,
+        // then read its `close_price` property values and take the latest.
+        const closePid = pidMap.get('close_price');
+        if (row.ticker.value && closePid) {
+            try {
+                const finNeid = await resolveFinancialInstrument(row.ticker.value);
+                if (finNeid) {
+                    const finValues = await fetchPropertyValues([finNeid], [closePid]);
+                    const latest = pickLatest(finValues.filter((v) => String(v.pid) === closePid));
                     if (latest?.value !== undefined && latest?.value !== null) {
                         row.stockPrice = {
                             value: Number(latest.value),
                             date: isoDate(latest.recorded_at),
                         };
                     }
-                } catch {
-                    // leave stockPrice null
                 }
+            } catch {
+                // leave stockPrice null
             }
-            void closePid;
         }
 
-        // News count in last 24 hours from `appears_in` relationship
-        const appearsInPid = pid(pidMap, 'appears_in');
-        if (appearsInPid !== null) {
+        // News count in last 24 hours from `appears_in` relationship.
+        // Requires the org's appears_in PID — note that getPropertyValues
+        // returns one row per (article, recording event), so each row counts
+        // toward the 24h appearance total when its `recorded_at` is recent.
+        const appearsInPid = pidMap.get('appears_in');
+        if (appearsInPid) {
             try {
-                const appRes: any = await client.getPropertyValues({
-                    eids: JSON.stringify([neid]),
-                    pids: JSON.stringify([appearsInPid]),
-                } as any);
-                const appValues: PropValueRow[] = appRes?.values ?? [];
+                const appValues = await fetchPropertyValues([neid], [appearsInPid]);
                 const cutoff = Date.now() - 24 * 60 * 60 * 1000;
                 let count = 0;
                 let latestDate: number | null = null;
+                const seen = new Set<string>();
                 for (const v of appValues) {
                     const t = v.recorded_at ? Date.parse(v.recorded_at) : NaN;
                     if (!isNaN(t) && t >= cutoff) {
+                        const key = String(v.value);
+                        if (seen.has(key)) continue;
+                        seen.add(key);
                         count += 1;
                         if (latestDate === null || t > latestDate) latestDate = t;
                     }
